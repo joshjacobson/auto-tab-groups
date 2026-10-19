@@ -42,7 +42,7 @@
 ### AI Enhancements
 
 - [ ] Content-aware grouping (analyze page content, not just URL/title)
-- [ ] Autonomous AI mode (AI decides when to regroup tabs)
+- [x] Autonomous AI mode — automatic topic grouping of new tabs (opt-in)
 - [ ] "Why is this tab here?" explainer for group assignments
 - [ ] Rule conflict detection and resolution suggestions
 

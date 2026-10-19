@@ -108,6 +108,63 @@ export function tabGroupSuggestionPrompt(
 }
 
 /**
+ * Build a prompt for the unattended pass: place tabs by topic, reusing groups
+ * that already exist and leaving alone anything that fits nowhere.
+ *
+ * Differs from tabGroupSuggestionPrompt in two ways a small model needs
+ * spelled out: existing group names are to be reused verbatim, and a tab may
+ * be omitted — the interactive prompt insists every tab lands somewhere, which
+ * is right for a one-off review and wrong for a pass that runs every few
+ * minutes.
+ */
+export function tabAutoGroupPrompt(
+  tabs: ReadonlyArray<{ title: string; url: string }>,
+  existingGroups: readonly string[]
+): AiChatMessage[] {
+  const tabList = tabs
+    .map((t, i) => {
+      let domain = t.url
+      try {
+        domain = new URL(t.url).hostname
+      } catch {
+        // Keep raw URL as fallback
+      }
+      return `${i + 1}. [${domain}] "${t.title}"`
+    })
+    .join("\n")
+
+  const existingLine =
+    existingGroups.length > 0
+      ? `Existing groups: ${existingGroups.map(name => `"${name}"`).join(", ")}`
+      : "Existing groups: none"
+
+  return [
+    {
+      role: "system",
+      content: [
+        "You organize browser tabs into groups by topic or purpose.",
+        'Output a JSON object: {"groups":[...]} where each element has groupName (1-3 words), tabIndices (1-based tab numbers), color (one of: grey, blue, red, yellow, green, pink, purple, cyan, orange).',
+        "Group by TOPIC, not by website. Tabs about the same subject from different sites belong together.",
+        "Use descriptive category names like 'Dev Tools', 'Shopping', 'Streaming' — not website names like 'Amazon' or 'GitHub'.",
+        "When a tab fits one of the existing groups, reuse that group's exact name.",
+        "A new group needs at least 2 tabs. Leave out any tab that fits nothing; not every tab has to be in a group.",
+        "",
+        "Example:",
+        'Existing groups: "Hiking"',
+        'Input: 1. [reddit.com] "Best trail snacks" 2. [youtube.com] "Cooking pasta" 3. [reddit.com] "Easy dinner recipes" 4. [example.com] "Quarterly results"',
+        'Output: {"groups":[{"groupName":"Hiking","tabIndices":[1],"color":"green"},{"groupName":"Cooking","tabIndices":[2,3],"color":"orange"}]}',
+        "",
+        "Rules: short names (1-3 words), JSON only."
+      ].join("\n")
+    },
+    {
+      role: "user",
+      content: `${existingLine}\nOrganize these tabs:\n${tabList}`
+    }
+  ]
+}
+
+/**
  * Build a prompt for explaining what a tab's content is about
  */
 export function tabExplainerPrompt(title: string, url: string): AiChatMessage[] {

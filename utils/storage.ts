@@ -81,6 +81,10 @@ export const aiModelId = storage.defineItem<string>("local:aiModelId", {
   fallback: DEFAULT_STATE.aiModelId
 })
 
+export const aiAutoGroupEnabled = storage.defineItem<boolean>("local:aiAutoGroupEnabled", {
+  fallback: DEFAULT_STATE.aiAutoGroupEnabled
+})
+
 export const openTabNextToCurrent = storage.defineItem<boolean>("local:openTabNextToCurrent", {
   fallback: DEFAULT_STATE.openTabNextToCurrent
 })
@@ -115,6 +119,13 @@ export const cachedAiSuggestions = storage.defineItem<CachedAiSuggestions | null
 )
 
 /**
+ * Titles of the groups AI auto-grouping created (bookkeeping, not a user setting)
+ */
+export const aiGroupTitles = storage.defineItem<string[]>("local:aiGroupTitles", {
+  fallback: []
+})
+
+/**
  * Load all storage values at once
  */
 export async function loadAllStorage(): Promise<StorageSchema> {
@@ -132,6 +143,7 @@ export async function loadAllStorage(): Promise<StorageSchema> {
     aiEnabledValue,
     aiProviderValue,
     aiModelIdValue,
+    aiAutoGroupEnabledValue,
     openTabNextToCurrentValue,
     sortGroupsAlphabeticallyValue,
     sortGroupsDirectionValue,
@@ -154,6 +166,7 @@ export async function loadAllStorage(): Promise<StorageSchema> {
     aiEnabled.getValue(),
     aiProvider.getValue(),
     aiModelId.getValue(),
+    aiAutoGroupEnabled.getValue(),
     openTabNextToCurrent.getValue(),
     sortGroupsAlphabetically.getValue(),
     sortGroupsDirection.getValue(),
@@ -178,6 +191,7 @@ export async function loadAllStorage(): Promise<StorageSchema> {
     aiEnabled: aiEnabledValue,
     aiProvider: aiProviderValue,
     aiModelId: aiModelIdValue,
+    aiAutoGroupEnabled: aiAutoGroupEnabledValue,
     openTabNextToCurrent: openTabNextToCurrentValue,
     sortGroupsAlphabetically: sortGroupsAlphabeticallyValue,
     sortGroupsDirection: sortGroupsDirectionValue,
@@ -233,6 +247,9 @@ export async function saveAllStorage(data: Partial<StorageSchema>): Promise<void
   }
   if (data.aiModelId !== undefined) {
     promises.push(aiModelId.setValue(data.aiModelId))
+  }
+  if (data.aiAutoGroupEnabled !== undefined) {
+    promises.push(aiAutoGroupEnabled.setValue(data.aiAutoGroupEnabled))
   }
   if (data.openTabNextToCurrent !== undefined) {
     promises.push(openTabNextToCurrent.setValue(data.openTabNextToCurrent))

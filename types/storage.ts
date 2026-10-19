@@ -66,6 +66,8 @@ export interface StorageSchema {
   aiProvider: AiProvider
   /** Selected AI model ID */
   aiModelId: string
+  /** Whether AI auto-grouping files new tabs into topic groups (opt-in, default off) */
+  aiAutoGroupEnabled: boolean
   /** Whether to open new tabs next to the current tab (opt-in, default off) */
   openTabNextToCurrent: boolean
   /**
@@ -108,6 +110,7 @@ export const DEFAULT_STATE: StorageSchema = {
   aiEnabled: false,
   aiProvider: "webllm",
   aiModelId: "Qwen2.5-3B-Instruct-q4f16_1-MLC",
+  aiAutoGroupEnabled: false,
   openTabNextToCurrent: false,
   deferGroupingUntilSeen: false,
   sortGroupsAlphabetically: false,

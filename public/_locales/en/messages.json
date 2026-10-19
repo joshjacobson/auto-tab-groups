@@ -383,6 +383,42 @@
     "message": "AI features are currently available on Chrome only. Firefox support is coming soon.",
     "description": "Notice shown to Firefox users."
   },
+  "aiAutoGroupLabel": {
+    "message": "Auto-group by topic",
+    "description": "Toggle that files new tabs into topic groups automatically."
+  },
+  "aiAutoGroupHelp": {
+    "message": "New tabs are sorted into topic groups a few seconds after they open. Tabs matched by a rule, in a group you excluded, or in a group you made yourself are left alone.",
+    "description": "Help text under the auto-group by topic toggle."
+  },
+  "aiAutoGroupNow": {
+    "message": "Group by Topic Now",
+    "description": "Button that runs one topic-grouping pass over the current window."
+  },
+  "aiAutoGroupRunning": {
+    "message": "Grouping by topic...",
+    "description": "Status while a topic-grouping pass is running."
+  },
+  "aiAutoGroupDone": {
+    "message": "Moved $tabs$ tabs into $groups$ groups",
+    "description": "Status after a topic-grouping pass changed something.",
+    "placeholders": {
+      "tabs": { "content": "$1", "example": "5" },
+      "groups": { "content": "$2", "example": "2" }
+    }
+  },
+  "aiAutoGroupNoChange": {
+    "message": "Nothing to regroup",
+    "description": "Status when a topic-grouping pass found nothing to move."
+  },
+  "aiAutoGroupFailed": {
+    "message": "Grouping by topic failed",
+    "description": "Status when a topic-grouping pass fails."
+  },
+  "aiAutoGroupArmed": {
+    "message": "New tabs will be grouped by topic a few seconds after they open.",
+    "description": "Confirmation shown when auto-group by topic is switched on."
+  },
 
   "rulesSectionTitle": {
     "message": "Custom Rules",

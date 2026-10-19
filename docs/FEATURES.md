@@ -398,6 +398,35 @@ Suggestions persist in `browser.storage.local` so they survive popup reopens:
 - Cache expires after 30 minutes
 - "Dismiss" button clears cache; clicking "Suggest Groups" overwrites with fresh results
 
+### Automatic Topic Grouping
+
+Off by default; a toggle in the AI section, below the model controls.
+
+1. A tab event — open, navigate, title change, load complete — schedules a
+   pass for that window six seconds later. Every further event restarts the
+   clock, so a page that fires a dozen events costs one pass.
+2. The pass looks at ungrouped tabs and tabs in groups the extension built by
+   domain. It does not look at pinned or system tabs, tabs a rule or blacklist
+   claims, groups you excluded, groups you or another extension made, or
+   groups an earlier pass made — those last ones are named in the prompt so a
+   new tab can join one rather than spawn a near-duplicate.
+3. Nothing runs unless at least one tab has changed since the last pass, and
+   nothing runs on a single tab unless a topic group already exists for it to
+   join. "Group by Topic Now" skips both checks.
+4. The model (`tabAutoGroupPrompt`) answers in the same shape as "Suggest
+   Groups". A name matching a group already in the window joins it; a name
+   belonging to a rule or an excluded group is refused; anything else becomes
+   a new group, provided two or more tabs share it. A lone tab stays where the
+   domain pass put it.
+5. The titles the pass produces are remembered in storage and forgotten once
+   no group carries them. While the toggle is on, `handleTabUpdate` leaves a
+   tab in such a group alone — the domain pass would otherwise pull it straight
+   back out on the next navigation. Off, they are ordinary foreign groups.
+6. When the service worker has restarted since the model was last loaded, the
+   pass reloads it from the browser cache first. A cheap extension API call on
+   an interval keeps the worker alive through loading and inference, which
+   make no such calls themselves.
+
 ### AI Rule Generation
 
 1. User describes a rule in natural language (e.g., "Group social media sites")

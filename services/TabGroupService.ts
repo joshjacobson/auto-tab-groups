@@ -5,10 +5,12 @@
 
 import type { Browser } from "wxt/browser"
 import type { CustomRule, TabGroupColor } from "../types"
+import { aiGroupLedger } from "../utils/AiGroupLedger"
 import { getRandomTabGroupColor } from "../utils/Constants"
 import { extractDomain, getDomainDisplayName } from "../utils/DomainUtils"
 import { getGroupColor, groupColorMapping, updateGroupColor } from "../utils/storage"
 import { withTabEditRetry } from "../utils/withTabEditRetry"
+import { aiService } from "./ai/AiService"
 import { type MatchedRule, rulesService } from "./RulesService"
 import { tabGroupState } from "./TabGroupState"
 import { stripIndexPrefix, tabSortService } from "./TabSortService"
@@ -147,6 +149,14 @@ class TabGroupServiceSimplified {
         return false
       }
 
+      // A group AI auto-grouping filed the tab into is named by topic, so the
+      // domain pass would pull the tab straight back out. While the feature is
+      // on, the tab stays; off, the group is an ordinary foreign group.
+      if (aiService.isAutoGroupEnabled() && (await this.isInAiGroup(tab))) {
+        console.log(`[TabGroupService] Tab ${tabId} is in an AI topic group, leaving it alone`)
+        return false
+      }
+
       // Leave a background tab where it was opened until the user looks at it.
       // forceGrouping bypasses this, so "Group Tabs" still files everything.
       if (!forceGrouping && this.shouldWaitForFirstView(tab)) {
@@ -238,6 +248,22 @@ class TabGroupServiceSimplified {
   }
 
   /**
+   * Whether a tab sits in a group that AI auto-grouping created.
+   */
+  async isInAiGroup(tab: Browser.tabs.Tab): Promise<boolean> {
+    if (!tab.groupId || tab.groupId === -1) return false
+    if (aiGroupLedger.isEmpty()) return false
+    if (!browser.tabGroups) return false
+
+    try {
+      const group = await browser.tabGroups.get(tab.groupId)
+      return aiGroupLedger.has(stripIndexPrefix(group?.title || ""))
+    } catch {
+      return false
+    }
+  }
+
+  /**
    * Whether a group is one this extension would have built itself.
    *
    * Other extensions create and manage their own tab groups, and they often
@@ -250,7 +276,7 @@ class TabGroupServiceSimplified {
    * would be filed under. Untitled groups are never ours — every group this
    * extension creates gets a title.
    */
-  private async isOwnGroup(
+  async isOwnGroup(
     group: Pick<Browser.tabGroups.TabGroup, "title">,
     tabsInGroup: Browser.tabs.Tab[]
   ): Promise<boolean> {

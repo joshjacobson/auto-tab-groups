@@ -13,6 +13,7 @@ import type {
   WebGpuCapability
 } from "../../types"
 import {
+  aiAutoGroupEnabled as aiAutoGroupEnabledStorage,
   aiEnabled as aiEnabledStorage,
   aiModelId as aiModelIdStorage,
   aiProvider as aiProviderStorage
@@ -25,10 +26,14 @@ class AiService {
   private enabled = false
   private provider: AiProvider = "webllm"
   private modelId = "Qwen2.5-3B-Instruct-q4f16_1-MLC"
+  private autoGroupEnabled = false
 
   updateFromStorage(settings: Partial<AiStorageSettings>): void {
     if (settings.aiEnabled !== undefined) this.enabled = settings.aiEnabled
     if (settings.aiProvider !== undefined) this.provider = settings.aiProvider
+    if (settings.aiAutoGroupEnabled !== undefined) {
+      this.autoGroupEnabled = settings.aiAutoGroupEnabled
+    }
     if (settings.aiModelId !== undefined) {
       const available = this.getActiveProvider().getAvailableModels()
       const isValid = available.some(m => m.id === settings.aiModelId)
@@ -46,6 +51,15 @@ class AiService {
   async setEnabled(value: boolean): Promise<void> {
     this.enabled = value
     await aiEnabledStorage.setValue(value)
+  }
+
+  isAutoGroupEnabled(): boolean {
+    return this.autoGroupEnabled
+  }
+
+  async setAutoGroupEnabled(value: boolean): Promise<void> {
+    this.autoGroupEnabled = value
+    await aiAutoGroupEnabledStorage.setValue(value)
   }
 
   getSelectedProvider(): AiProvider {
@@ -70,7 +84,8 @@ class AiService {
     return {
       aiEnabled: this.enabled,
       aiProvider: this.provider,
-      aiModelId: this.modelId
+      aiModelId: this.modelId,
+      aiAutoGroupEnabled: this.autoGroupEnabled
     }
   }
 

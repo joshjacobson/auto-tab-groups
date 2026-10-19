@@ -78,6 +78,8 @@ export interface AiStorageSettings {
   aiEnabled: boolean
   aiProvider: AiProvider
   aiModelId: string
+  /** Whether new tabs are filed into topic groups automatically */
+  aiAutoGroupEnabled: boolean
 }
 
 /**

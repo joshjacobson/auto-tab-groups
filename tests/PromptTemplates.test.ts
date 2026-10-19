@@ -4,6 +4,7 @@ import {
   conflictResolutionPrompt,
   ruleGenerationPrompt,
   SUGGESTION_SCHEMA,
+  tabAutoGroupPrompt,
   tabExplainerPrompt,
   tabGroupSuggestionPrompt
 } from "../utils/PromptTemplates"
@@ -241,6 +242,48 @@ describe("PromptTemplates", () => {
     it("should ask for a concise description", () => {
       const messages = tabExplainerPrompt("test", "https://test.com")
       expect(messages[0].content).toContain("one sentence")
+    })
+  })
+  describe("tabAutoGroupPrompt", () => {
+    const tabs = [
+      { title: "Flights to Lisbon", url: "https://flights.example.com/search" },
+      { title: "Hotel booking", url: "https://hotels.example.com/" }
+    ]
+
+    it("returns a system and a user message", () => {
+      const messages = tabAutoGroupPrompt(tabs, [])
+      expect(messages).toHaveLength(2)
+      expect(messages[0].role).toBe("system")
+      expect(messages[1].role).toBe("user")
+    })
+
+    it("names the existing topic groups so the model reuses them", () => {
+      const messages = tabAutoGroupPrompt(tabs, ["Trip Planning", "Cooking"])
+      expect(messages[1].content).toContain('Existing groups: "Trip Planning", "Cooking"')
+      expect(messages[0].content).toContain("reuse that group's exact name")
+    })
+
+    it("says so when no topic group exists yet", () => {
+      const messages = tabAutoGroupPrompt(tabs, [])
+      expect(messages[1].content).toContain("Existing groups: none")
+    })
+
+    it("lists tabs with a 1-based index and hostname", () => {
+      const messages = tabAutoGroupPrompt(tabs, [])
+      expect(messages[1].content).toContain('1. [flights.example.com] "Flights to Lisbon"')
+      expect(messages[1].content).toContain('2. [hotels.example.com] "Hotel booking"')
+    })
+
+    it("allows the model to leave a tab out", () => {
+      const messages = tabAutoGroupPrompt(tabs, [])
+      expect(messages[0].content).toContain("not every tab has to be in a group")
+      expect(messages[0].content).toContain("at least 2 tabs")
+    })
+
+    it("asks for the same JSON shape as the interactive suggestions", () => {
+      const messages = tabAutoGroupPrompt(tabs, [])
+      expect(messages[0].content).toContain('{"groups":[...]}')
+      expect(messages[0].content).toContain("tabIndices")
     })
   })
 })

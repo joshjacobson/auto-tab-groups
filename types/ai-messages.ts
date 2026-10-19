@@ -21,6 +21,9 @@ export type AiMessageAction =
   | "suggestGroups"
   | "applySuggestion"
   | "analyzeRuleConflicts"
+  | "getAiAutoGroupState"
+  | "setAiAutoGroupEnabled"
+  | "runAiAutoGroup"
 
 /**
  * Get full AI state message
@@ -169,6 +172,41 @@ export interface AnalyzeRuleConflictsResponse {
 }
 
 /**
+ * Read the AI auto-grouping toggle and the outcome of the last pass
+ */
+export interface GetAiAutoGroupStateMessage {
+  action: "getAiAutoGroupState"
+}
+
+/**
+ * Turn AI auto-grouping on or off
+ */
+export interface SetAiAutoGroupEnabledMessage {
+  action: "setAiAutoGroupEnabled"
+  enabled: boolean
+}
+
+/**
+ * Run one AI auto-grouping pass over the current window now
+ */
+export interface RunAiAutoGroupMessage {
+  action: "runAiAutoGroup"
+}
+
+/**
+ * Response for runAiAutoGroup
+ */
+export interface RunAiAutoGroupResponse {
+  success: boolean
+  ran: boolean
+  reason?: string
+  groupsCreated: number
+  groupsJoined: number
+  tabsMoved: number
+  error?: string
+}
+
+/**
  * Union of all AI messages
  */
 export type AiMessage =
@@ -184,6 +222,9 @@ export type AiMessage =
   | SuggestGroupsMessage
   | ApplySuggestionMessage
   | AnalyzeRuleConflictsMessage
+  | GetAiAutoGroupStateMessage
+  | SetAiAutoGroupEnabledMessage
+  | RunAiAutoGroupMessage
 
 /**
  * Response for getAiState

@@ -232,6 +232,20 @@
             <div class="help-text ai-help-text" data-i18n="aiDownloadNote">
               Models run locally in your browser. First load downloads the model (~250MB-900MB).
             </div>
+            <div class="ai-auto-group-section" id="aiAutoGroupSection">
+              <div class="toggle-container">
+                <span data-i18n="aiAutoGroupLabel">Auto-group by topic</span>
+                <label class="switch">
+                  <input type="checkbox" id="aiAutoGroupToggle" />
+                  <span class="slider round"></span>
+                </label>
+              </div>
+              <div class="help-text ai-help-text" data-i18n="aiAutoGroupHelp">
+                New tabs are sorted into topic groups a few seconds after they open. Tabs matched by a rule, in a group you excluded, or in a group you made yourself are left alone.
+              </div>
+              <button id="aiAutoGroupNowButton" class="button ai-suggest-button" disabled data-i18n="aiAutoGroupNow">Group by Topic Now</button>
+              <div class="ai-suggest-status" id="aiAutoGroupStatus"></div>
+            </div>
             <div class="ai-suggest-section" id="aiSuggestSection">
               <button id="aiSuggestButton" class="button ai-suggest-button" disabled data-i18n="aiSuggestGroups">
                 Suggest Groups

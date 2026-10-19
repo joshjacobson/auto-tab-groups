@@ -9,6 +9,7 @@
  */
 
 import {
+  aiAutoGroupService,
   aiService,
   contextMenuService,
   rulesService,
@@ -17,6 +18,7 @@ import {
 } from "../services"
 import { handleCommand } from "../services/CommandService"
 import { seedProtectedGroupsOnFirstRun } from "../services/FirstRunService"
+import { aiGroupLedger } from "../utils/AiGroupLedger"
 import {
   parseAiRuleResponse,
   parseAiSuggestionResponse,
@@ -46,6 +48,7 @@ export default defineBackground(() => {
         const storageData = await loadAllStorage()
         tabGroupState.updateFromStorage(storageData)
         aiService.updateFromStorage(storageData)
+        await aiGroupLedger.load()
         await initI18n(tabGroupState.userLocale)
         stateInitialized = true
         console.log("State loaded successfully from storage")
@@ -82,6 +85,12 @@ export default defineBackground(() => {
           await tabGroupService.groupAllTabs()
         } else {
           console.log("Auto-grouping is disabled")
+        }
+
+        if (aiAutoGroupService.isEnabled()) {
+          for (const window of await browser.windows.getAll()) {
+            aiAutoGroupService.schedule(window.id)
+          }
         }
       } catch (error) {
         console.error("Error during initial auto-grouping:", error)
@@ -560,6 +569,37 @@ export default defineBackground(() => {
             break
           }
 
+          case "getAiAutoGroupState":
+            result = {
+              enabled: aiService.isAutoGroupEnabled(),
+              lastRun: aiAutoGroupService.lastRun
+            }
+            break
+
+          case "setAiAutoGroupEnabled": {
+            await aiService.setAutoGroupEnabled(msg.enabled)
+            if (msg.enabled) {
+              for (const window of await browser.windows.getAll()) {
+                aiAutoGroupService.schedule(window.id)
+              }
+            } else {
+              aiAutoGroupService.cancelAll()
+            }
+            result = { enabled: aiService.isAutoGroupEnabled() }
+            break
+          }
+
+          case "runAiAutoGroup": {
+            const [currentTab] = await browser.tabs.query({ currentWindow: true })
+            if (currentTab?.windowId === undefined) {
+              result = { success: false, error: "No window to group" }
+              break
+            }
+            const run = await aiAutoGroupService.run(currentTab.windowId, true)
+            result = { success: run.reason !== "error", ...run }
+            break
+          }
+
           case "generateRule": {
             if (typeof msg.description !== "string" || !msg.description.trim()) {
               result = { success: false, error: "Description is required" }
@@ -859,7 +899,7 @@ export default defineBackground(() => {
   })
 
   // Tab event listeners
-  browser.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
+  browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     try {
       console.log(`[tabs.onUpdated] Tab ${tabId} updated:`, changeInfo)
       if (changeInfo.url) {
@@ -878,6 +918,12 @@ export default defineBackground(() => {
           console.log(`[tabs.onUpdated] Title changed to: ${changeInfo.title}`)
           await tabGroupService.handleTabUpdate(tabId)
         }
+      }
+
+      // Topic grouping waits for the page to settle: the title is what the
+      // model reads, and it lands after the URL
+      if (changeInfo.url || changeInfo.title || changeInfo.status === "complete") {
+        aiAutoGroupService.schedule(tab.windowId)
       }
     } catch (error) {
       console.error(`[tabs.onUpdated] Error handling tab ${tabId} update:`, error)
@@ -911,6 +957,7 @@ export default defineBackground(() => {
         await ensureStateLoaded()
         await tabGroupService.handleTabUpdate(tab.id)
       }
+      aiAutoGroupService.schedule(tab.windowId)
     } catch (error) {
       console.error(`[tabs.onCreated] Error handling tab creation:`, error)
     }

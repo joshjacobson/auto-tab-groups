@@ -95,6 +95,7 @@ A lightweight cross-browser extension that automatically groups open tabs by dom
 
 All AI features run **entirely on your device** using [WebLLM](https://github.com/mlc-ai/web-llm) and WebGPU. No tab data ever leaves your browser.
 
+- **Auto-group by topic**: Switch it on and new tabs are filed into topic groups ("Trip Planning", "Annual Review") a few seconds after they open — across sites, not by domain. Groups you made yourself, tabs matched by a rule, and groups you excluded are left alone.
 - **Smart Tab Group Suggestions**: Click "Suggest Groups" and the AI analyzes your open tabs to suggest topic-based groups (e.g., "Dev Tools", "Shopping", "Streaming") — not just domain-based grouping
 - **AI Rule Generation**: Describe a rule in plain English (e.g., "Group all social media sites together") and the AI generates the domains and configuration
 - **Suggestion Caching**: Apply suggestions one at a time — the popup remembers remaining suggestions across reopens

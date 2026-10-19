@@ -106,6 +106,8 @@ export interface SimpleMessage extends BaseMessage {
     | "unloadAiModel"
     | "checkWebGpuSupport"
     | "suggestGroups"
+    | "getAiAutoGroupState"
+    | "runAiAutoGroup"
 }
 
 /**

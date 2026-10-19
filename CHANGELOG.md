@@ -11,6 +11,21 @@ for those.
 
 ## [Unreleased]
 
+### Added
+
+- AI auto-grouping. With a model loaded and "Auto-group by topic" on, a tab is
+  filed into a topic group — "Trip Planning", "Annual Review" — a few seconds
+  after it opens, instead of staying sorted by site. Off by default. Tabs a
+  rule matches, tabs in a group you excluded, and groups you or another
+  extension made are left alone, and domain grouping leaves the topic groups
+  alone in turn. "Group by Topic Now" runs the same pass on demand. Titles and
+  hostnames go to the on-device model; nothing leaves the browser.
+
+### Fixed
+
+- Changing any setting wrote the AI defaults back to storage, so the AI toggle
+  and the chosen model reverted the next time the service worker restarted.
+
 ## [3.15.4]
 
 ### Fixed

@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { aiService } from "../services/ai/AiService"
 import { webLlmProvider } from "../services/ai/WebLlmProvider"
-import { aiEnabled, aiModelId, aiProvider } from "../utils/storage"
+import { aiAutoGroupEnabled, aiEnabled, aiModelId, aiProvider } from "../utils/storage"
 import * as WebGpuUtils from "../utils/WebGpuUtils"
 
 const TEST_MODEL = {
@@ -58,7 +58,8 @@ describe("AiService", () => {
     aiService.updateFromStorage({
       aiEnabled: false,
       aiProvider: "webllm",
-      aiModelId: "test-model"
+      aiModelId: "test-model",
+      aiAutoGroupEnabled: false
     })
 
     // Clear call counts from the setup phase
@@ -125,6 +126,20 @@ describe("AiService", () => {
       expect(spySetAiModelId).toHaveBeenCalledWith("new-model")
     })
 
+    it("should set auto-grouping and persist to storage", async () => {
+      const spySetAutoGroup = vi.spyOn(aiAutoGroupEnabled, "setValue").mockResolvedValue(undefined)
+      await aiService.setAutoGroupEnabled(true)
+      expect(aiService.isAutoGroupEnabled()).toBe(true)
+      expect(spySetAutoGroup).toHaveBeenCalledWith(true)
+    })
+
+    it("should read auto-grouping from storage settings", () => {
+      aiService.updateFromStorage({ aiAutoGroupEnabled: true })
+      expect(aiService.isAutoGroupEnabled()).toBe(true)
+      aiService.updateFromStorage({ aiAutoGroupEnabled: false })
+      expect(aiService.isAutoGroupEnabled()).toBe(false)
+    })
+
     it("should return full settings object", () => {
       aiService.updateFromStorage({
         aiEnabled: true,
@@ -136,6 +151,7 @@ describe("AiService", () => {
       expect(settings).toEqual({
         aiEnabled: true,
         aiProvider: "webllm",
+        aiAutoGroupEnabled: false,
         aiModelId: "test-model"
       })
     })

@@ -101,6 +101,9 @@ const aiWebGpuWarning = document.getElementById("aiWebGpuWarning") as HTMLDivEle
 const aiSuggestButton = document.getElementById("aiSuggestButton") as HTMLButtonElement
 const aiSuggestStatus = document.getElementById("aiSuggestStatus") as HTMLDivElement
 const aiSuggestionsContainer = document.getElementById("aiSuggestionsContainer") as HTMLDivElement
+const aiAutoGroupToggle = document.getElementById("aiAutoGroupToggle") as HTMLInputElement
+const aiAutoGroupNowButton = document.getElementById("aiAutoGroupNowButton") as HTMLButtonElement
+const aiAutoGroupStatus = document.getElementById("aiAutoGroupStatus") as HTMLDivElement
 
 // State
 let aiSectionExpanded = false
@@ -1134,7 +1137,7 @@ async function initializeAiSection(): Promise<void> {
     }
 
     const response = await sendMessage<{
-      settings?: { aiEnabled: boolean; aiModelId: string }
+      settings?: { aiEnabled: boolean; aiModelId: string; aiAutoGroupEnabled?: boolean }
       modelStatus?: { status: string; progress: number; error: string | null }
       availableModels?: Array<{ id: string; displayName: string }>
     }>({ action: "getAiState" })
@@ -1151,6 +1154,9 @@ async function initializeAiSection(): Promise<void> {
     if (response?.settings) {
       aiEnabledToggle.checked = response.settings.aiEnabled
       aiModelSelect.value = response.settings.aiModelId
+      if (aiAutoGroupToggle) {
+        aiAutoGroupToggle.checked = response.settings.aiAutoGroupEnabled ?? false
+      }
       updateAiSettingsVisibility(response.settings.aiEnabled)
       updateAiBadge(response.settings.aiEnabled)
     }
@@ -1226,12 +1232,14 @@ function updateAiModelStatus(modelStatus: {
     aiLoadButton.disabled = false
     aiModelSelect.disabled = true
     aiSuggestButton.disabled = false
+    if (aiAutoGroupNowButton) aiAutoGroupNowButton.disabled = false
     stopAiStatusPolling()
   } else if (status === "loading") {
     aiLoadButton.textContent = t("aiLoadingButton", "Loading...")
     aiLoadButton.disabled = true
     aiModelSelect.disabled = true
     aiSuggestButton.disabled = true
+    if (aiAutoGroupNowButton) aiAutoGroupNowButton.disabled = true
     startAiStatusPolling()
   } else if (status === "error") {
     aiLoadButton.textContent = t("aiRetryLoad", "Retry Load")
@@ -1239,6 +1247,7 @@ function updateAiModelStatus(modelStatus: {
     aiLoadButton.disabled = false
     aiModelSelect.disabled = false
     aiSuggestButton.disabled = true
+    if (aiAutoGroupNowButton) aiAutoGroupNowButton.disabled = true
     stopAiStatusPolling()
     if (error) {
       console.error("AI model error:", error)
@@ -1249,6 +1258,7 @@ function updateAiModelStatus(modelStatus: {
     aiLoadButton.disabled = false
     aiModelSelect.disabled = false
     aiSuggestButton.disabled = true
+    if (aiAutoGroupNowButton) aiAutoGroupNowButton.disabled = true
   }
 }
 
@@ -1306,6 +1316,50 @@ async function handleSuggestGroups(): Promise<void> {
     aiSuggestStatus.className = "ai-suggest-status error"
   } finally {
     aiSuggestButton.disabled = false
+  }
+}
+
+async function handleAutoGroupNow(): Promise<void> {
+  aiAutoGroupNowButton.disabled = true
+  aiAutoGroupStatus.textContent = t("aiAutoGroupRunning", "Grouping by topic...")
+  aiAutoGroupStatus.className = "ai-suggest-status loading"
+
+  try {
+    const response = await sendMessage<{
+      success?: boolean
+      ran?: boolean
+      reason?: string
+      groupsCreated?: number
+      groupsJoined?: number
+      tabsMoved?: number
+      error?: string
+    }>({ action: "runAiAutoGroup" })
+
+    if (response?.ran) {
+      const groups = (response.groupsCreated ?? 0) + (response.groupsJoined ?? 0)
+      const tabs = response.tabsMoved ?? 0
+      aiAutoGroupStatus.textContent =
+        groups > 0
+          ? t("aiAutoGroupDone", `Moved ${tabs} tabs into ${groups} groups`, [
+              String(tabs),
+              String(groups)
+            ])
+          : t("aiAutoGroupNoChange", "Nothing to regroup")
+      aiAutoGroupStatus.className = "ai-suggest-status"
+    } else if (response?.reason === "nothing-new") {
+      aiAutoGroupStatus.textContent = t("aiAutoGroupNoChange", "Nothing to regroup")
+      aiAutoGroupStatus.className = "ai-suggest-status"
+    } else {
+      aiAutoGroupStatus.textContent =
+        response?.error || t("aiAutoGroupFailed", "Grouping by topic failed")
+      aiAutoGroupStatus.className = "ai-suggest-status error"
+    }
+  } catch (error) {
+    console.error("Error grouping by topic:", error)
+    aiAutoGroupStatus.textContent = t("aiAutoGroupFailed", "Grouping by topic failed")
+    aiAutoGroupStatus.className = "ai-suggest-status error"
+  } finally {
+    aiAutoGroupNowButton.disabled = false
   }
 }
 
@@ -1497,6 +1551,17 @@ aiModelSelect?.addEventListener("change", async () => {
 })
 
 aiSuggestButton?.addEventListener("click", handleSuggestGroups)
+
+aiAutoGroupToggle?.addEventListener("change", async () => {
+  const enabled = aiAutoGroupToggle.checked
+  await sendMessage({ action: "setAiAutoGroupEnabled", enabled })
+  aiAutoGroupStatus.textContent = enabled
+    ? t("aiAutoGroupArmed", "New tabs will be grouped by topic a few seconds after they open.")
+    : ""
+  aiAutoGroupStatus.className = "ai-suggest-status"
+})
+
+aiAutoGroupNowButton?.addEventListener("click", handleAutoGroupNow)
 
 aiLoadButton?.addEventListener("click", async () => {
   const response = await sendMessage<{
