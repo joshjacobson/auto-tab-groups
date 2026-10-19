@@ -65,7 +65,9 @@ export default defineBackground(() => {
    * Save current state to storage
    */
   async function saveState(): Promise<void> {
-    await saveAllStorage(tabGroupState.getStorageData())
+    // tabGroupState only carries defaults for the AI settings; writing those
+    // back would reset the AI toggle and model choice on the next restart
+    await saveAllStorage({ ...tabGroupState.getStorageData(), ...aiService.getSettings() })
   }
 
   // Always load state when service worker starts - SSOT from browser storage
